@@ -1,0 +1,99 @@
+---
+title: "Assignment 3"
+author: "Anuraag Vasal"
+date: "10/18/2021"
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(readr)
+library(dplyr)
+library(fastDummies)
+library(caret)
+library(class)
+library(melt)
+library(reshape)
+library(reshape2)
+library(ggplot2)
+library(ISLR)
+library(naivebayes)
+library(e1071)
+
+setwd("C:/Users/anura/Desktop/Machine Learning/Assignment 3")
+Bank<- read.csv("C:/Users/anura/Desktop/Machine Learning/Assignment 3/UniversalBank.csv")
+
+##Transform Data
+Bank$PersonalLoan <- as.factor(Bank$Personal.Loan)
+Bank$Online <- as.factor(Bank$Online)
+Bank$CreditCard <- as.factor(Bank$CreditCard)
+View(Bank)
+set.seed(15)
+
+#Data Partition
+Train_Index <- createDataPartition(Bank$Personal.Loan, p=0.6, list=FALSE)
+Train <-Bank[Train_Index,]
+Valid <- Bank[-Train_Index,]
+#{A}
+Melt_Train <- melt(Train,id=c("CreditCard","Personal.Loan"),variable= "Online")
+cast_Train <- dcast(Melt_Train,CreditCard+Personal.Loan~Online)
+cast_Train <-cast_Train[c(1,2,14)]
+cast_Train
+View(cast_Train)
+```
+#{B}
+The probability of the customer accepting the loan is 90/888 =0.10135
+
+#{C}
+```{r}
+#pivot table1
+Melt_Train1 <- melt(Train,id=c("Personal.Loan"),variable= "Online")
+cast_Train1 <- dcast(Melt_Train1,Personal.Loan~Online)
+cast_Train1 <-cast_Train1[c(1,13)]
+cast_Train1
+#pivot table2
+Melt_Train2 <- melt(Train,id=c("CreditCard"),variable= "Online")
+cast_Train2 <- dcast(Melt_Train2,CreditCard ~ Online)
+cast_Train2 <-cast_Train2[c(1,14)]
+cast_Train2
+```
+#{D}Compute the following quantities [P(A | B) means “the probability of A given B. 
+```{r}
+Train_Data <- Train[c(13,10,14)]
+table(Train_Data[,c(3,2)])
+table(Train_Data[,c(1,2)])
+table(Train_Data[,c(2)])
+```
+i)   P(CC=1 | PL=1)  = 90/(798+90)= 0.10135
+ii)  P(OL=1 | PL=1)  = 180/(180+119)=0.60200
+iii) P(PL=1)         = (209+90)/3000=0.09966
+iv)  P(CC=1 | PL=0)  = 798/(798+1903)=0.29544
+v)   P(OL=1 | PL=0)  = 1607/(1607+1094)=0.59496
+vi)  P(PL=0)         = (1903+798)/3000=0.90033
+
+#{E}
+Use the quantities computed above to compute the naive Bayes probability P(Loan = 1 | CC = 1, Online = 1).
+ =(0.10135*0.60266*0.09966)/((0.10135*0.60266*0.09966)+(0.29544*0.59496*0.90033))
+ = (0.00608052)/(0.00608052+0.15825548)
+ = 0.03700053
+ 
+#{F} Compare this value with the one obtained from the pivot table in (B). Which is a more accurate estimate?
+ANS:- Part B = 0.10135  and Part E = 0.03700053
+      by comparing both the values part B is more accurate.
+#{G}
+```{r}
+train.df <- Bank[Train_Index, ]
+test.df <- Bank[ -Train_Index,]
+train <- Bank[Train_Index, ]
+test <- Bank[-Train_Index,]
+nb_train = train.df[,c(10,13:14)]
+nb_test = test.df[,c(10,13:14)]
+naivebayes = naiveBayes(Personal.Loan~.,data=nb_train)
+naivebayes
+
+```
